@@ -95,18 +95,21 @@ if args.file:
     except ValueError:
         sys.exit("error: '{}' is not a valid torrent hash".format(btih))
 
-    if 'title' in fileargs:
-        magnet.set_title(fileargs['title'])
-    if 'trackers' in fileargs:
-        if not isinstance(fileargs['trackers'], list):
-            sys.exit("error: 'trackers' must be a list")
-        for tracker in fileargs['trackers']:
-            try:
-                magnet.add_tracker(tracker)
-            except TypeError:
-                sys.exit("error: tracker URI must be a string".format(tracker))
-            except ValueError:
-                sys.exit("error: '{}' is not a valid tracker URI".format(tracker))
+    if fileargs:
+        if not isinstance(fileargs, dict):
+            sys.exit("error: link options must be a dictionary")
+        if 'title' in fileargs:
+            magnet.set_title(fileargs['title'])
+        if 'trackers' in fileargs:
+            if not isinstance(fileargs['trackers'], list):
+                sys.exit("error: 'trackers' must be a list")
+            for tracker in fileargs['trackers']:
+                try:
+                    magnet.add_tracker(tracker)
+                except TypeError:
+                    sys.exit("error: tracker URI must be a string".format(tracker))
+                except ValueError:
+                    sys.exit("error: '{}' is not a valid tracker URI".format(tracker))
 
 if args.n:
     magnet.set_title(args.n)
