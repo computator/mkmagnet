@@ -64,9 +64,31 @@ def tracker_uri(uri):
         raise argparse.ArgumentTypeError("'{}' is not a valid tracker URI".format(uri))
     return uri
 
-parser = argparse.ArgumentParser(add_help=False, prog="mkmagnet", description="Creates a magnet link from the given parameters")
+parser = argparse.ArgumentParser(
+    usage="%(prog)s [-h HASH | -f FILE] [-n TITLE] [-t URI]...",
+    formatter_class=argparse.RawDescriptionHelpFormatter,
+    description="Creates a magnet link from the given parameters",
+    add_help=False,
+    epilog=(
+        "File Format:\n"
+        "  The input file must contain a YAML/JSON object with a single property consisting\n"
+        "  of the torrent hash as the key (formatted as a 40 character hexadecimal string)\n"
+        "  and a dictionary of link options as the value.\n"
+        "  \n"
+        "  The valid link options are:\n"
+        "  \n"
+        "    'title'      the torrent title\n"
+        "    'trackers'   a list of tracker URIs\n"
+        "\n"
+        "File Example:\n"
+        "  0102030405060708090a0b0c0d0e0f1011121314:\n"
+        "    title: Torrent.Title.Example.001\n"
+        "    trackers:\n"
+        "      - http://tracker.torrentsite.com:5678/announce\n"
+        "      - udp://track.othersite.com:8910\n"
+        ))
 
-srcparser = parser.add_argument_group("torrent").add_mutually_exclusive_group(required=True)
+srcparser = parser.add_argument_group("torrent").add_mutually_exclusive_group()
 srcparser.add_argument('-h', '--hash', type=torrent_hash, help="torrent hash")
 srcparser.add_argument('-f', '--file', type=argparse.FileType(), help="read parameters from YAML/JSON file (or '-' for stdin)")
 
@@ -80,13 +102,13 @@ args = parser.parse_args()
 
 if args.hash:
     magnet = MagnetLink(args.hash)
-if args.file:
+elif args.file:
     try:
         fileargs = yaml.safe_load(args.file)
     except yaml.YAMLError as e:
         sys.exit(e)
     if not fileargs:
-        sys.exit("error: input file missing valid torrent data")
+        sys.exit("error: input file data is missing or not in the correct format")
     btih, fileargs = fileargs.popitem()
     try:
         magnet = MagnetLink(btih)
@@ -110,6 +132,9 @@ if args.file:
                     sys.exit("error: tracker URI must be a string".format(tracker))
                 except ValueError:
                     sys.exit("error: '{}' is not a valid tracker URI".format(tracker))
+else:
+    parser.print_usage(sys.stderr)
+    sys.exit(2)
 
 if args.n:
     magnet.set_title(args.n)
